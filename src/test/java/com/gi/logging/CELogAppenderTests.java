@@ -13,7 +13,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class CELogAppenderTests {
     private static Logger logger;
@@ -52,22 +51,14 @@ public class CELogAppenderTests {
     }
 
     @Test
-    public void testAppenderNotEmpty() {
-        logger.info("A message");
-        assertFalse(appender.getEvents().isEmpty());
-    }
-
-    @Test
     public void testWarning() {
         logger.warn("warning...");
-        assertFalse(appender.getEvents().isEmpty());
         assertEquals(1, appender.getWarningCount());
     }
 
     @Test
     public void testError() {
         logger.error("error!");
-        assertFalse(appender.getEvents().isEmpty());
         assertEquals(1, appender.getErrorCount());
     }
 }

@@ -14,15 +14,11 @@ import org.owasp.encoder.Encode;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Date;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 @Plugin(name = "CELogAppender", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
 public class CELogAppender extends AbstractAppender {
-    private final ConcurrentMap<String, LogEvent> eventMap = new ConcurrentHashMap<>();
     private final String targetDbPath;
     private Database targetDb;
     private Document logDoc;
@@ -44,7 +40,6 @@ public class CELogAppender extends AbstractAppender {
 
     @Override
     public void append(LogEvent event) {
-        eventMap.put(Instant.now().toString(), event);
         byte[] content = getLayout().toByteArray(event);
         String message = new String(content, StandardCharsets.UTF_8);
 
@@ -70,10 +65,6 @@ public class CELogAppender extends AbstractAppender {
         } else if (Level.WARN.equals(level)) {
             warningCount++;
         }
-    }
-
-    public ConcurrentMap<String, LogEvent> getEvents() {
-        return eventMap;
     }
 
     @Override
