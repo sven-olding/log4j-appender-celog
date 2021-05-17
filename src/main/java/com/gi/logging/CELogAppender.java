@@ -19,13 +19,18 @@ import java.util.concurrent.TimeUnit;
 
 @Plugin(name = "CELogAppender", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
 public class CELogAppender extends AbstractAppender {
+    public static final int MAX_ENTRIES = 500;
+
     private final String targetDbPath;
     private Database targetDb;
     private Document logDoc;
     private MIMEEntity mimeEntity;
     private Stream stream;
+    private int logNumber = 0;
+    private long entryCount = 0;
     private long warningCount = 0;
     private long errorCount = 0;
+    private Session session;
 
     protected CELogAppender(String name, Filter filter, Layout<? extends Serializable> layout,
                             boolean ignoreExceptions, Property[] properties, String target) {
@@ -58,12 +63,37 @@ public class CELogAppender extends AbstractAppender {
         }
 
         Level level = event.getLevel();
-        if (Level.ERROR.equals(level)) {
-            errorCount++;
-        } else if (Level.FATAL.equals(level)) {
+        if (Level.ERROR.equals(level) || Level.FATAL.equals(level)) {
             errorCount++;
         } else if (Level.WARN.equals(level)) {
             warningCount++;
+        }
+        entryCount++;
+
+        if (entryCount >= MAX_ENTRIES) {
+            saveLogDoc();
+            createNewLogDoc();
+        }
+    }
+
+    private void createNewLogDoc() {
+        try {
+            logNumber = getLogNumber() + 1;
+            entryCount = 0;
+
+            logDoc = targetDb.createDocument();
+
+            logDoc.replaceItemValue("Form", "faCELog");
+            logDoc.replaceItemValue("fdLogDate", session.createDateTime(new Date()));
+            logDoc.replaceItemValue("fdLogEvent", getName());
+            logDoc.replaceItemValue("fdUser", session.getEffectiveUserName());
+            logDoc.replaceItemValue("fdLogNumber", getLogNumber());
+            logDoc.replaceItemValue("fdDBName", targetDb.getTitle());
+
+            mimeEntity = logDoc.createMIMEEntity("fdLogEntrys");
+            stream = session.createStream();
+        } catch (NotesException e) {
+            e.printStackTrace();
         }
     }
 
@@ -72,7 +102,7 @@ public class CELogAppender extends AbstractAppender {
         super.start();
         try {
             NotesThread.sinitThread();
-            Session session = NotesFactory.createSession();
+            session = NotesFactory.createSession();
             String[] split = targetDbPath.split("!!");
             String server = split[0];
             String path = split[1];
@@ -80,25 +110,13 @@ public class CELogAppender extends AbstractAppender {
             if (!targetDb.isOpen()) {
                 targetDb.open();
             }
-
-            logDoc = targetDb.createDocument();
-
-            logDoc.replaceItemValue("Form", "faCELog");
-            logDoc.replaceItemValue("fdLogDate", session.createDateTime(new Date()));
-            logDoc.replaceItemValue("fdLogEvent", getName());
-            logDoc.replaceItemValue("fdUser", session.getEffectiveUserName());
-            logDoc.replaceItemValue("fdLogNumber", 1);
-            logDoc.replaceItemValue("fdDBName", targetDb.getTitle());
-
-            mimeEntity = logDoc.createMIMEEntity("fdLogEntrys");
-            stream = session.createStream();
+            createNewLogDoc();
         } catch (NotesException e) {
             throw new LoggingException(e);
         }
     }
 
-    @Override
-    public boolean stop(long timeout, TimeUnit timeUnit) {
+    private void saveLogDoc() {
         try {
             if (mimeEntity != null && stream != null) {
                 mimeEntity.setContentFromText(stream, "text/html;charset=UTF-8", MIMEEntity.ENC_IDENTITY_8BIT);
@@ -122,14 +140,17 @@ public class CELogAppender extends AbstractAppender {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public boolean stop(long timeout, TimeUnit timeUnit) {
+        saveLogDoc();
 
         try {
             targetDb.recycle();
-
         } catch (NotesException e) {
             e.printStackTrace();
         }
-
 
         NotesThread.stermThread();
 
@@ -142,6 +163,14 @@ public class CELogAppender extends AbstractAppender {
 
     public long getErrorCount() {
         return errorCount;
+    }
+
+    public long getEntryCount() {
+        return entryCount;
+    }
+
+    public int getLogNumber() {
+        return logNumber;
     }
 
     public static class Builder<B extends Builder<B>> extends AbstractAppender.Builder<B>

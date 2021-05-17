@@ -28,7 +28,7 @@ public class CELogAppenderTests {
                 .build();
         appender = CELogAppender
                 .newBuilder()
-                .withTarget("Domino/SOL!!kredit/dokumentendruck.nsf")
+                .withTarget("Domino/SOL!!Projects/DZPBANK/Kredit/GI89/dokumentendruck.nsf")
                 .withLayout(layout)
                 .withName("CElogAppenderTests")
                 .build();
@@ -60,5 +60,20 @@ public class CELogAppenderTests {
     public void testError() {
         logger.error("error!");
         assertEquals(1, appender.getErrorCount());
+    }
+
+    @Test
+    public void testEntryCount() {
+        logger.info("some message");
+        logger.info("another message");
+        assertEquals(2, appender.getEntryCount());
+    }
+
+    @Test
+    public void testMaxEntries() {
+        for(int i=0;i < (CELogAppender.MAX_ENTRIES + 2);i++) {
+            logger.info("log entry number " + i);
+        }
+        assertEquals(2, appender.getLogNumber());
     }
 }
