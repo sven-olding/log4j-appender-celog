@@ -14,12 +14,17 @@ import org.owasp.encoder.Encode;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Plugin(name = "CELogAppender", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
 public class CELogAppender extends AbstractAppender {
     public static final int MAX_ENTRIES = 500;
+
+    private final List<LogEvent> errorEvents = new ArrayList<>();
+    private final List<LogEvent> warningEvents = new ArrayList<>();
 
     private final String targetDbPath;
     private Database targetDb;
@@ -36,6 +41,14 @@ public class CELogAppender extends AbstractAppender {
                             boolean ignoreExceptions, Property[] properties, String target) {
         super(name, filter, layout, ignoreExceptions, properties);
         targetDbPath = target;
+    }
+
+    public List<LogEvent> getErrorEvents() {
+        return errorEvents;
+    }
+
+    public List<LogEvent> getWarningEvents() {
+        return warningEvents;
     }
 
     @PluginBuilderFactory
@@ -65,8 +78,10 @@ public class CELogAppender extends AbstractAppender {
         Level level = event.getLevel();
         if (Level.ERROR.equals(level) || Level.FATAL.equals(level)) {
             errorCount++;
+            errorEvents.add(event);
         } else if (Level.WARN.equals(level)) {
             warningCount++;
+            warningEvents.add(event);
         }
         entryCount++;
 
