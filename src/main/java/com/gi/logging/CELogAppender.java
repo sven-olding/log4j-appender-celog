@@ -14,19 +14,18 @@ import org.owasp.encoder.Encode;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.Date;
-import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 @Plugin(name = "CELogAppender", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
 public class CELogAppender extends AbstractAppender {
     public static final int MAX_ENTRIES = 500;
-
-    private final List<LogEvent> errorEvents = new ArrayList<>();
-    private final List<LogEvent> warningEvents = new ArrayList<>();
-
     private final String targetDbPath;
+    private final ConcurrentMap<String, String> warnings = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, String> errors = new ConcurrentHashMap<>();
     private Database targetDb;
     private Document logDoc;
     private MIMEEntity mimeEntity;
@@ -43,26 +42,38 @@ public class CELogAppender extends AbstractAppender {
         targetDbPath = target;
     }
 
-    public List<LogEvent> getErrorEvents() {
-        return errorEvents;
-    }
-
-    public List<LogEvent> getWarningEvents() {
-        return warningEvents;
-    }
-
     @PluginBuilderFactory
     public static <B extends Builder<B>> B newBuilder() {
         return new Builder<B>().asBuilder();
+    }
+
+    public ConcurrentMap<String, String> getWarnings() {
+        return warnings;
+    }
+
+    public ConcurrentMap<String, String> getErrors() {
+        return errors;
     }
 
     @Override
     public void append(LogEvent event) {
         byte[] content = getLayout().toByteArray(event);
         String message = new String(content, StandardCharsets.UTF_8);
+        String cssAddon = "color: #000";
+        if (event.getLevel() == Level.WARN) {
+            warnings.put(Instant.now().toString(), message);
+            cssAddon = "color: #0000FF; font-weight: bold";
+            warningCount++;
+        }
+        if (event.getLevel() == Level.ERROR || event.getLevel() == Level.FATAL) {
+            errors.put(Instant.now().toString(), message);
+            cssAddon = "color: #FF0000; font-weight: bold";
+            errorCount++;
+        }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("<div style=\"font-family: Arial; font-size: 10px; margin-left: 5px; margin-right: 5px\">");
+        sb.append("<div style=\"font-family: Arial; font-size: 10px; margin-left: 5px; margin-right: 5px; ")
+                .append(cssAddon).append("\">");
         message = Encode.forHtmlContent(message).replace("\n", "<br />").replace("\r", "");
         sb.append(message);
         sb.append("<br />");
@@ -75,16 +86,7 @@ public class CELogAppender extends AbstractAppender {
             e.printStackTrace();
         }
 
-        Level level = event.getLevel();
-        if (Level.ERROR.equals(level) || Level.FATAL.equals(level)) {
-            errorCount++;
-            errorEvents.add(event);
-        } else if (Level.WARN.equals(level)) {
-            warningCount++;
-            warningEvents.add(event);
-        }
         entryCount++;
-
         if (entryCount >= MAX_ENTRIES) {
             saveLogDoc();
             createNewLogDoc();
