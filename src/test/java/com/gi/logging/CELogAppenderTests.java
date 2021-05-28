@@ -28,7 +28,7 @@ public class CELogAppenderTests {
                 .build();
         appender = CELogAppender
                 .newBuilder()
-                .withTarget("Domino/SOL!!Projects/DZPBANK/Kredit/GI89/dokumentendruck.nsf")
+                .withTarget("Domino/SOL!!Projects/DZPBANK/GI810/dokumentendruck.nsf")
                 .withLayout(layout)
                 .withName("CElogAppenderTests")
                 .build();
@@ -64,6 +64,8 @@ public class CELogAppenderTests {
 
     @Test
     public void testEntryCount() {
+        appender.stop();
+        appender.start();
         logger.info("some message");
         logger.info("another message");
         assertEquals(2, appender.getEntryCount());
