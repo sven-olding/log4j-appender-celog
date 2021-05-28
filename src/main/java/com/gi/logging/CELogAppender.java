@@ -83,7 +83,6 @@ public class CELogAppender extends AbstractAppender {
             stream.writeText(sb.toString());
         } catch (NotesException e) {
             System.out.println(message);
-            e.printStackTrace();
         }
 
         entryCount++;
@@ -143,11 +142,13 @@ public class CELogAppender extends AbstractAppender {
             e.printStackTrace();
         }
         try {
-            logDoc.replaceItemValue("fdLogErrors", getErrorCount());
-            logDoc.replaceItemValue("fdLogWarnings", getWarningCount());
-            logDoc.closeMIMEEntities(true);
-            logDoc.computeWithForm(false, false);
-            logDoc.save();
+            if (entryCount > 0) {
+                logDoc.replaceItemValue("fdLogErrors", getErrorCount());
+                logDoc.replaceItemValue("fdLogWarnings", getWarningCount());
+                logDoc.closeMIMEEntities(true);
+                logDoc.computeWithForm(false, false);
+                logDoc.save();
+            }
         } catch (NotesException e) {
             e.printStackTrace();
         } finally {
