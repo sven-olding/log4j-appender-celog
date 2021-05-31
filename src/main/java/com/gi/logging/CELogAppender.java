@@ -72,7 +72,7 @@ public class CELogAppender extends AbstractAppender {
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("<div style=\"font-family: Arial; font-size: 10px; margin-left: 5px; margin-right: 5px; ")
+        sb.append("<div style=\"font-family: Consolas, Courier, monospace; font-size: 10px; margin-left: 5px; margin-right: 5px; ")
                 .append(cssAddon).append("\">");
         message = Encode.forHtmlContent(message).replace("\n", "<br />").replace("\r", "");
         sb.append(message);
