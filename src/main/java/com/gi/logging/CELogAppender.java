@@ -70,6 +70,9 @@ public class CELogAppender extends AbstractAppender {
             cssAddon = "color: #FF0000; font-weight: bold";
             errorCount++;
         }
+        if(event.getLevel() == Level.DEBUG || event.getLevel() == Level.TRACE) {
+            cssAddon = "color: #2936a6";
+        }
 
         StringBuilder sb = new StringBuilder();
         sb.append("<div style=\"font-family: Consolas, Courier, monospace; font-size: 10px; margin-left: 5px; margin-right: 5px; ")

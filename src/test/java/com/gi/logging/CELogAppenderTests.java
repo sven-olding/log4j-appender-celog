@@ -68,7 +68,9 @@ public class CELogAppenderTests {
         appender.start();
         logger.info("some message");
         logger.info("another message");
-        assertEquals(2, appender.getEntryCount());
+        logger.warn("some warning");
+        logger.debug("debug this");
+        assertEquals(4, appender.getEntryCount());
     }
 
     @Test
