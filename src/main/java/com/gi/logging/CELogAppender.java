@@ -35,6 +35,7 @@ public class CELogAppender extends AbstractAppender {
     private long warningCount = 0;
     private long errorCount = 0;
     private Session session;
+    private boolean stopThread = false;
 
     protected CELogAppender(String name, Filter filter, Layout<? extends Serializable> layout,
                             boolean ignoreExceptions, Property[] properties, String target) {
@@ -70,7 +71,7 @@ public class CELogAppender extends AbstractAppender {
             cssAddon = "color: #FF0000; font-weight: bold";
             errorCount++;
         }
-        if(event.getLevel() == Level.DEBUG || event.getLevel() == Level.TRACE) {
+        if (event.getLevel() == Level.DEBUG || event.getLevel() == Level.TRACE) {
             cssAddon = "color: #2936a6";
         }
 
@@ -120,8 +121,11 @@ public class CELogAppender extends AbstractAppender {
     public void start() {
         super.start();
         try {
-            NotesThread.sinitThread();
-            session = NotesFactory.createSession();
+            if (session == null) {
+                NotesThread.sinitThread();
+                session = NotesFactory.createSession();
+                stopThread = true;
+            }
             String[] split = targetDbPath.split("!!");
             String server = split[0];
             String path = split[1];
@@ -133,6 +137,11 @@ public class CELogAppender extends AbstractAppender {
         } catch (NotesException e) {
             throw new LoggingException(e);
         }
+    }
+
+    public void start(Session session) {
+        this.session = session;
+        start();
     }
 
     private void saveLogDoc() {
@@ -172,8 +181,9 @@ public class CELogAppender extends AbstractAppender {
         } catch (NotesException e) {
             e.printStackTrace();
         }
-
-        NotesThread.stermThread();
+        if (stopThread) {
+            NotesThread.stermThread();
+        }
 
         return super.stop(timeout, timeUnit);
     }
