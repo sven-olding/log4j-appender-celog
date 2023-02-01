@@ -10,7 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="log4j-appender-celog" target="8" />
+      <module name="log4j-appender-celog" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
