@@ -6,7 +6,7 @@
 
     <groupId>com.gi.logging</groupId>
     <artifactId>log4j-appender-celog</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
 
     <packaging>jar</packaging>
 
@@ -81,6 +81,12 @@
             <groupId>org.glassfish.corba</groupId>
             <artifactId>glassfish-corba-internal-api</artifactId>
             <version>4.2.4</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.faces</groupId>
+            <artifactId>javax.faces-api</artifactId>
+            <version>2.3</version>
+            <scope>provided</scope>
         </dependency>
         <!-- DOMINO ALREADY INCLUDED LIBS - END -->
     </dependencies>

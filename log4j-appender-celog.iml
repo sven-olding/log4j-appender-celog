@@ -47,5 +47,6 @@
     <orderEntry type="library" name="Maven: org.glassfish.pfl:pfl-tf:4.1.2" level="project" />
     <orderEntry type="library" name="Maven: org.glassfish.corba:glassfish-corba-omgapi:4.2.4" level="project" />
     <orderEntry type="library" name="Maven: org.glassfish.corba:glassfish-corba-internal-api:4.2.4" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: javax.faces:javax.faces-api:2.3" level="project" />
   </component>
 </module>

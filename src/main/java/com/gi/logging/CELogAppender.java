@@ -12,6 +12,7 @@ import org.apache.logging.log4j.core.config.plugins.PluginBuilderFactory;
 import org.apache.logging.log4j.core.config.plugins.validation.constraints.Required;
 import org.owasp.encoder.Encode;
 
+import javax.faces.context.FacesContext;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -35,10 +36,8 @@ public class CELogAppender extends AbstractAppender {
     private long warningCount = 0;
     private long errorCount = 0;
     private Session session;
-    private boolean stopThread = false;
 
-    protected CELogAppender(String name, Filter filter, Layout<? extends Serializable> layout,
-                            boolean ignoreExceptions, Property[] properties, String target) {
+    protected CELogAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties, String target) {
         super(name, filter, layout, ignoreExceptions, properties);
         targetDbPath = target;
     }
@@ -76,8 +75,7 @@ public class CELogAppender extends AbstractAppender {
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("<span style=\"font-family: Consolas, Courier, monospace; font-size: 10px; margin-left: 5px; margin-right: 5px; ")
-                .append(cssAddon).append("\">");
+        sb.append("<span style=\"font-family: Consolas, Courier, monospace; font-size: 10px; margin-left: 5px; margin-right: 5px; ").append(cssAddon).append("\">");
         message = Encode.forHtmlContent(message).replace("\n", "<br />").replace("\r", "");
         sb.append(message);
         sb.append("<br />");
@@ -117,14 +115,32 @@ public class CELogAppender extends AbstractAppender {
         }
     }
 
+    private Session getSession() {
+        Session session = WebServiceBase.getCurrentSession();
+        if (session == null) {
+            try {
+                FacesContext context = FacesContext.getCurrentInstance();
+
+                session = (Session) context.getApplication().getVariableResolver().resolveVariable(context, "session");
+            } catch (NoClassDefFoundError ignored) {
+            }
+            if (session == null) {
+                try {
+                    session = NotesFactory.createSession();
+                } catch (NotesException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return session;
+    }
+
     @Override
     public void start() {
         super.start();
         try {
             if (session == null) {
-                NotesThread.sinitThread();
-                session = NotesFactory.createSession();
-                stopThread = true;
+                session = getSession();
             }
             String[] split = targetDbPath.split("!!");
             String server = split[0];
@@ -181,9 +197,6 @@ public class CELogAppender extends AbstractAppender {
         } catch (NotesException e) {
             e.printStackTrace();
         }
-        if (stopThread) {
-            NotesThread.stermThread();
-        }
 
         return super.stop(timeout, timeUnit);
     }
@@ -204,8 +217,7 @@ public class CELogAppender extends AbstractAppender {
         return logNumber;
     }
 
-    public static class Builder<B extends Builder<B>> extends AbstractAppender.Builder<B>
-            implements org.apache.logging.log4j.core.util.Builder<CELogAppender> {
+    public static class Builder<B extends Builder<B>> extends AbstractAppender.Builder<B> implements org.apache.logging.log4j.core.util.Builder<CELogAppender> {
 
         @PluginBuilderAttribute
         @Required(message = "No target database provided")
