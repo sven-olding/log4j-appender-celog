@@ -116,14 +116,17 @@ public class CELogAppender extends AbstractAppender {
     }
 
     private Session getSession() {
-        Session session = WebServiceBase.getCurrentSession();
+        Session session = null;
+        try {
+            FacesContext context = FacesContext.getCurrentInstance();
+            session = (Session) context.getApplication().getVariableResolver().resolveVariable(context, "session");
+        } catch (NoClassDefFoundError ignored) {
+        }
         if (session == null) {
             try {
-                FacesContext context = FacesContext.getCurrentInstance();
+                session = WebServiceBase.getCurrentSession();
+            } catch(Exception ignored) {}
 
-                session = (Session) context.getApplication().getVariableResolver().resolveVariable(context, "session");
-            } catch (NoClassDefFoundError ignored) {
-            }
             if (session == null) {
                 try {
                     session = NotesFactory.createSession();
